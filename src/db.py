@@ -18,6 +18,7 @@ def init_db_collection(embedding_path):
             embeddings=[v],
             ids=[instance_id]
         )
+        break
 
     print("DB load done!")
     return db_collection

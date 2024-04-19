@@ -23,9 +23,9 @@ async def search_chain(request: Request, asym_id: str, n_results: int = 100):
 
     if not os.path.isfile(f"{embedding_path}/{asym_id}.csv"):
         random_id = ".".join(random.choice(os.listdir(embedding_path)).split(".")[0:2])
-        context = {"asym_id": asym_id, "search_id": random_id}
+        context = {"asym_id": asym_id, "search_id": random_id, "request": request}
         return templates.TemplateResponse(
-            request=request, name="null-instance.html.jinja", context=context
+            name="null-instance.html.jinja", context=context
         )
 
     ch_embedding = list(pd.read_csv(f"{embedding_path}/{asym_id}.csv").iloc[:, 0].values)
@@ -42,9 +42,9 @@ async def search_chain(request: Request, asym_id: str, n_results: int = 100):
             "score": y
         } for idx, (x, y) in enumerate(zip(result['ids'][0], result['distances'][0]))
     ]
-    context = {"search_id": asym_id, "results": results}
+    context = {"search_id": asym_id, "results": results, "request": request}
     return templates.TemplateResponse(
-        request=request, name="search.html.jinja", context=context
+        name="search.html.jinja", context=context
     )
 
 
@@ -52,7 +52,7 @@ async def search_chain(request: Request, asym_id: str, n_results: int = 100):
 @app.get("/search_chains", response_class=HTMLResponse)
 async def form(request: Request):
     random_id = ".".join(random.choice(os.listdir(embedding_path)).split(".")[0:2])
-    context = {"search_id": random_id}
+    context = {"search_id": random_id,  "request": request}
     return templates.TemplateResponse(
-        request=request, name="index.html.jinja", context=context
+        name="index.html.jinja", context=context
     )
