@@ -1,0 +1,14 @@
+<form>
+  <script>
+    function redirectToSite() {
+      var textValue = document.getElementById('textInput').value;
+      if (textValue.trim() === '') {
+        textValue = "7PK0.A"
+      }
+      window.location.href = '/search_chains/' + encodeURIComponent(textValue);
+    }
+  </script>
+  <label for="textInput">Chain:</label>
+  <input type="text" id="textInput" name="textInput" value="{{ search_id }}" required>
+  <button type="button" onclick="redirectToSite()">Submit</button>
+</form>
