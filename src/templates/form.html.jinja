@@ -3,11 +3,17 @@
         function redirectToSite() {
             let textValue = document.getElementById('textInput').value ?? "7PK0.A";
             let n_res = document.getElementById('n_res').value ?? 100;
-            window.location.href = '/search_chains/' + encodeURIComponent(textValue) + '?n_results='+n_res;
+            let searchType = document.getElementById('searchType').value;
+            window.location.href = `/embedding_search/${textValue}?granularity=${searchType}&n_results=${n_res}`;
         }
     </script>
     <label for="textInput">Chain:</label>
     <input type="text" id="textInput" name="textInput" value="{{ search_id }}" style="width: 75px;" required>
+    <label for="searchType" style="margin-left:30px;">Search Type:</label>
+    <select id="searchType" name="searchType" style="width: 100px;" required>
+        <option value="chain">Chain</option>
+        <option value="assembly">Assembly</option>
+    </select>
     <label for="n_res" style="margin-left:30px;">#results:</label>
     <input type="text" id="n_res" name="n_res" value="100" style="width: 50px;" required>
     <button type="button" onclick="redirectToSite()">Submit</button>
@@ -18,6 +24,11 @@
             }
         });
         document.getElementById('n_res').addEventListener("keydown", (event) => {
+            if (event.isComposing || event.key === 'Enter') {
+                redirectToSite();
+            }
+        });
+        document.getElementById('searchType').addEventListener("keydown", (event) => {
             if (event.isComposing || event.key === 'Enter') {
                 redirectToSite();
             }
