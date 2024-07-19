@@ -3,11 +3,11 @@ import random
 
 import pandas as pd
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from src.db import init_db_collection
-from src.utils import img_url, alignment_url
+from src.utils import img_url, alignment_url, arches_score
 
 embedding_path = os.environ.get("RCSB_EMBEDDING_PATH")
 assembly_path = os.environ.get("RCSB_ASSEMBLY_PATH")
@@ -66,3 +66,55 @@ async def form(request: Request):
     return templates.TemplateResponse(
         name="index.html.jinja", context=context
     )
+
+
+@app.get("/search/chain/{entry_id}/{asym_id}", response_class=JSONResponse)
+async def search_chain(request: Request, entry_id: str, asym_id: str, threshold_set: float = 80):
+    rcsb_id = f"{entry_id}.{asym_id}"
+    if not os.path.isfile(f"{embedding_path}/{rcsb_id}.csv"):
+        return []
+    rcsb_embedding = list(pd.read_csv(f"{embedding_path}/{rcsb_id}.csv").iloc[:, 0].values)
+    result = chain_collection.query(
+        query_embeddings=[rcsb_embedding],
+        n_results=10000
+    )
+    return [
+        {
+            "geometryScore": arches_score(y),
+            "totalScore": arches_score(y),
+            "rcsbShapeContainerIdentifiers": {
+                "entry_id": x.split(".")[0],
+                "asym_id": x.split(".")[1]
+            },
+        } for idx, (x, y) in enumerate(zip(result['ids'][0], result['distances'][0])) if arches_score(y) >= threshold_set
+    ]
+
+
+@app.get("/search/assembly/{entry_id}/{assembly_id}", response_class=JSONResponse)
+async def search_assembly(request: Request, entry_id: str, assembly_id: str, threshold_set: float = 80):
+    rcsb_id = f"{entry_id}-{assembly_id}"
+    if not os.path.isfile(f"{assembly_path}/{rcsb_id}.csv"):
+        return []
+    rcsb_embedding = list(pd.read_csv(f"{assembly_path}/{rcsb_id}.csv").iloc[:, 0].values)
+    result = assembly_collection.query(
+        query_embeddings=[rcsb_embedding],
+        n_results=10000
+    )
+    return [
+        {
+            "geometryScore": arches_score(y),
+            "totalScore": arches_score(y),
+            "rcsbShapeContainerIdentifiers": {
+                "entry_id": x.split("-")[0],
+                "assembly_id": x.split("-")[1]
+            },
+        } for idx, (x, y) in enumerate(zip(result['ids'][0], result['distances'][0])) if arches_score(y) >= threshold_set
+    ]
+
+
+def ready_results(results, threshold_set):
+    if len(results) == 0:
+        return False
+    if results[len(results)-1]['distances'] < threshold_set:
+        return False
+    return True
