@@ -69,7 +69,7 @@ async def form(request: Request):
 
 
 @app.get("/search/chain/{entry_id}/{asym_id}", response_class=JSONResponse)
-async def search_chain(request: Request, entry_id: str, asym_id: str, threshold_set: float = 80):
+async def search_chain(request: Request, entry_id: str, asym_id: str, tm_threshold: float = 80):
     rcsb_id = f"{entry_id}.{asym_id}"
     if not os.path.isfile(f"{embedding_path}/{rcsb_id}.csv"):
         return []
@@ -86,12 +86,12 @@ async def search_chain(request: Request, entry_id: str, asym_id: str, threshold_
                 "entry_id": x.split(".")[0],
                 "asym_id": x.split(".")[1]
             },
-        } for idx, (x, y) in enumerate(zip(result['ids'][0], result['distances'][0])) if arches_score(y) >= threshold_set
+        } for idx, (x, y) in enumerate(zip(result['ids'][0], result['distances'][0])) if arches_score(y) >= tm_threshold
     ]
 
 
 @app.get("/search/assembly/{entry_id}/{assembly_id}", response_class=JSONResponse)
-async def search_assembly(request: Request, entry_id: str, assembly_id: str, threshold_set: float = 80):
+async def search_assembly(request: Request, entry_id: str, assembly_id: str, tm_threshold: float = 80):
     rcsb_id = f"{entry_id}-{assembly_id}"
     if not os.path.isfile(f"{assembly_path}/{rcsb_id}.csv"):
         return []
@@ -108,7 +108,7 @@ async def search_assembly(request: Request, entry_id: str, assembly_id: str, thr
                 "entry_id": x.split("-")[0],
                 "assembly_id": x.split("-")[1]
             },
-        } for idx, (x, y) in enumerate(zip(result['ids'][0], result['distances'][0])) if arches_score(y) >= threshold_set
+        } for idx, (x, y) in enumerate(zip(result['ids'][0], result['distances'][0])) if arches_score(y) >= tm_threshold
     ]
 
 
