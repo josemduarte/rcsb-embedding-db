@@ -80,9 +80,9 @@ async def search_chain(request: Request, entry_id: str, asym_id: str, tm_thresho
     )
     return [
         {
-            "geometryScore": arches_score(y),
-            "totalScore": arches_score(y),
-            "rcsbShapeContainerIdentifiers": {
+            "geometry_score": arches_score(y),
+            "total_score": arches_score(y),
+            "rcsb_shape_container_identifiers": {
                 "entry_id": x.split(".")[0],
                 "asym_id": x.split(".")[1]
             },
@@ -102,9 +102,9 @@ async def search_assembly(request: Request, entry_id: str, assembly_id: str, tm_
     )
     return [
         {
-            "geometryScore": arches_score(y),
-            "totalScore": arches_score(y),
-            "rcsbShapeContainerIdentifiers": {
+            "geometry_score": arches_score(y),
+            "total_score": arches_score(y),
+            "rcsb_shape_container_identifiers": {
                 "entry_id": x.split("-")[0],
                 "assembly_id": x.split("-")[1]
             },
