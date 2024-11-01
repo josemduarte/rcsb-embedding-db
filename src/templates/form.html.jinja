@@ -1,21 +1,24 @@
 <form>
     <script>
         function redirectToSite() {
-            let textValue = document.getElementById('textInput').value ?? "7PK0.A";
-            let n_res = document.getElementById('n_res').value ?? 100;
-            let searchType = document.getElementById('searchType').value;
-            window.location.href = `/embedding_search/${textValue}?granularity=${searchType}&n_results=${n_res}`;
+            const textValue = document.getElementById('textInput').value ?? "7PK0.A";
+            const n_res = parseInt(document.getElementById('n_res').value ?? "100");
+            const searchType = document.getElementById('searchType').value;
+            const includeCsm = document.getElementById('includeCsm').checked;
+            window.location.href = `/embedding_search/${textValue}?granularity=${searchType}&n_results=${n_res}&include_csm=${includeCsm}`;
         }
     </script>
     <label for="textInput">Chain:</label>
     <input type="text" id="textInput" name="textInput" value="{{ search_id }}" style="width: 75px;" required>
     <label for="searchType" style="margin-left:30px;">Search Type:</label>
     <select id="searchType" name="searchType" style="width: 100px;" required>
-        <option value="chain">Chain</option>
-        <option value="assembly">Assembly</option>
+        <option value="chain" {% if granularity == "chain"%} selected {%  endif %}>Chain</option>
+        <option value="assembly" {% if granularity == "assembly"%} selected {%  endif %}>Assembly</option>
     </select>
+    <label for="includeCsm" style="margin-left:30px;">Include CSM</label>
+    <input type="checkbox" id="includeCsm" name="csm" value="true" {% if include_csm %} checked {%  endif %}>
     <label for="n_res" style="margin-left:30px;">#results:</label>
-    <input type="text" id="n_res" name="n_res" value="100" style="width: 50px;" required>
+    <input type="text" id="n_res" name="n_res" value="{% if n_results %}{{ n_results }}{% else %}100{%  endif %}" style="width: 50px;" required>
     <button type="button" onclick="redirectToSite()">Submit</button>
     <script>
         document.getElementById('textInput').addEventListener("keydown", (event) => {
