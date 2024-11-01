@@ -34,15 +34,31 @@ def display_progress(current, total):
 def load_path_to_collection(embedding_path, *db_collection_list):
     print(f"DB loading data from path {embedding_path}")
     files = os.listdir(embedding_path)
+    buffer = {
+        "ids": [],
+        "embeddings": []
+    }
+    buffer_size = 40000
     for idx, r in enumerate(files):
         instance_id = file_name(r)
         v = list(pd.read_csv(f"{embedding_path}/{r}").iloc[:, 0].values)
+        buffer["ids"].append(instance_id)
+        buffer["embeddings"].append(v)
+        if idx % buffer_size == 0:
+            for db_collection in db_collection_list:
+                db_collection.add(
+                    embeddings=buffer["embeddings"],
+                    ids=buffer["ids"]
+                )
+            buffer["embeddings"] = []
+            buffer["ids"] = []
+        display_progress(idx+1, len(files))
+    if len(buffer["embeddings"]) > 0:
         for db_collection in db_collection_list:
             db_collection.add(
-                embeddings=[v],
-                ids=[instance_id]
+                embeddings=buffer["embeddings"],
+                ids=buffer["ids"]
             )
-        display_progress(idx+1, len(files))
     print(f"DB load path {embedding_path} done")
 
 
