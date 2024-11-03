@@ -31,7 +31,7 @@ _ef_search = 10000
 
 @app.get("/embedding_search/{rcsb_id}", response_class=HTMLResponse)
 async def search_chain(request: Request, rcsb_id: str, granularity: str = "chain", n_results: int = 100, include_csm: bool = False):
-    if not os.path.isfile(f"{embedding_path}/{rcsb_id}.csv") and not os.path.isfile(f"{assembly_path}/{rcsb_id}.csv"):
+    if not os.path.isfile(f"{embedding_path}/{rcsb_id}.csv") and not os.path.isfile(f"{assembly_path}/{rcsb_id}.csv") and not os.path.isfile(f"{csm_path}/{rcsb_id}.csv"):
         random_id = ".".join(random.choice(os.listdir(embedding_path)).split(".")[0:2])
         context = {"rcsb_id": rcsb_id, "search_id": random_id, "request": request}
         return templates.TemplateResponse(
@@ -40,7 +40,9 @@ async def search_chain(request: Request, rcsb_id: str, granularity: str = "chain
 
     rcsb_embedding = list(pd.read_csv(f"{embedding_path}/{rcsb_id}.csv").iloc[:, 0].values) \
         if os.path.isfile(f"{embedding_path}/{rcsb_id}.csv") \
-        else list(pd.read_csv(f"{assembly_path}/{rcsb_id}.csv").iloc[:, 0].values)
+        else list(pd.read_csv(f"{assembly_path}/{rcsb_id}.csv").iloc[:, 0].values) \
+        if os.path.isfile(f"{assembly_path}/{rcsb_id}.csv") \
+        else list(pd.read_csv(f"{csm_path}/{rcsb_id}.csv").iloc[:, 0].values)
 
     result = (assembly_collection if granularity == "assembly" else (csm_collection if include_csm else chain_collection)).query(
         query_embeddings=[rcsb_embedding],
