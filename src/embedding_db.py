@@ -10,6 +10,7 @@ class EmbeddingDB:
     PORT = '19530'
     ID_FIELD = 'id'
     EMBEDDING_FIELD = 'embedding'
+    BATCH_SIZE = 10000
 
     def __init__(
             self,
@@ -57,10 +58,11 @@ class EmbeddingDB:
 
         self.collection = Collection(name=collection_name, schema=collection_schema)
 
-    def insert_df(self, df, batch_size=10000):
+    def insert_df(self, df):
         if not {self.ID_FIELD, self.EMBEDDING_FIELD}.issubset(df.columns):
             raise ValueError(f"DataFrame must contain '{self.ID_FIELD}' and '{self.EMBEDDING_FIELD}' columns.")
 
+        batch_size = self.BATCH_SIZE
         total_rows = len(df)
         num_batches = (total_rows + batch_size - 1) // batch_size  # Calculate the number of batches needed
 
