@@ -100,7 +100,6 @@ class EmbeddingDB:
             field_name="embedding",
             index_params=index_params
         )
-        print("Index created with cosine distance metric.")
 
         # Define the index parameters for an inverted index
         index_params = {
@@ -113,3 +112,4 @@ class EmbeddingDB:
 
         # Optionally, load the collection to memory for faster queries
         self.collection.load()
+        print("Index created with cosine distance metric.")
