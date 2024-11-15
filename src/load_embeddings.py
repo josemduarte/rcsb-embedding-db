@@ -10,6 +10,11 @@ collection_name = 'af_embeddings'
 dim = 1280
 
 
+def insert_df(x):
+    embedding_db, file = x
+    embedding_db.insert_df(pd.read_pickle(file))
+
+
 def main():
     embedding_db = EmbeddingDB(
         collection_name,
@@ -18,8 +23,8 @@ def main():
     num_processes = mp.cpu_count()
     with mp.Pool(processes=num_processes) as pool:
         for _ in pool.imap_unordered(
-                lambda file: embedding_db.insert_df(pd.read_pickle(file)),
-                [f'{af_embedding_folder}/{df}' for df in os.listdir(af_embedding_folder)]
+                insert_df,
+                [(embedding_db, f'{af_embedding_folder}/{df}') for df in os.listdir(af_embedding_folder)]
         ):
             pass
     embedding_db.index_collection()
