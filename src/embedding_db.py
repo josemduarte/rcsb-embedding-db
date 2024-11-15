@@ -96,7 +96,7 @@ class EmbeddingDB:
             "params": {"M": 16, "efConstruction": 100}
         }
         self.collection.create_index(
-            field_name="embedding",
+            field_name=self.EMBEDDING_FIELD,
             index_params=index_params
         )
 
@@ -107,7 +107,10 @@ class EmbeddingDB:
         }
 
         # Create the index on the 'id' field
-        self.collection.create_index(field_name="id", index_params=index_params)
+        self.collection.create_index(
+            field_name=self.ID_FIELD,
+            index_params=index_params
+        )
         print("Index created with cosine distance metric.")
 
         # Optionally, load the collection to memory for faster queries
