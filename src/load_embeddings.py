@@ -10,7 +10,7 @@ collection_name = 'af_embeddings'
 dim = 1280
 
 
-def insert_df(x):
+def insert_file(x):
     embedding_db, file = x
     embedding_db.insert_df(pd.read_pickle(file))
 
@@ -23,7 +23,7 @@ def main():
     num_processes = mp.cpu_count()
     with mp.Pool(processes=num_processes) as pool:
         for _ in pool.imap_unordered(
-                insert_df,
+                insert_file,
                 [(embedding_db, f'{af_embedding_folder}/{df}') for df in os.listdir(af_embedding_folder)]
         ):
             pass
