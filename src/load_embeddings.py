@@ -26,6 +26,7 @@ def main():
                 [f'{af_embedding_folder}/{df}' for df in os.listdir(af_embedding_folder)]
         ):
             pass
+    embedding_db.flush()
     embedding_db.index_collection()
 
 
