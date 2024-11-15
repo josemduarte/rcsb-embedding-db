@@ -85,10 +85,6 @@ class EmbeddingDB:
             insert_result = self.collection.insert(entities)
             print(f"Inserted {len(insert_result.primary_keys)} entities into the collection.")
 
-        # Flush after all batches are inserted to ensure data is persisted
-        self.collection.flush()
-        print("All data inserted and flushed.")
-
     def index_collection(self):
         # Create an index on the embedding field with cosine distance
         index_params = {
