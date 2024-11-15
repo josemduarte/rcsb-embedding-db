@@ -3,7 +3,7 @@ import os
 import pandas as pd
 
 from embedding_db import EmbeddingDB
-import multiprocessing as mp
+import concurrent.futures
 
 
 af_embedding_folder = "/mnt/vdc1/computed-models/embeddings"
@@ -22,10 +22,10 @@ def insert_file(file):
 
 def main():
 
-    num_processes = mp.cpu_count()
-    print(f"Using {num_processes} CPU cores")
-    with mp.Pool(num_processes) as pool:
-        pool.starmap(insert_file, [f'{af_embedding_folder}/{df}' for df in os.listdir(af_embedding_folder)])
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [executor.submit(insert_file, f'{af_embedding_folder}/{df}') for df in os.listdir(af_embedding_folder)]
+        for future in concurrent.futures.as_completed(futures):
+            print(future.result())
 
     embedding_db.flush()
     embedding_db.index_collection()
