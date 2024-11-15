@@ -17,15 +17,15 @@ embedding_db = EmbeddingDB(
 
 def insert_file(file):
     embedding_db.insert_df(pd.read_pickle(file))
+    return f"Loaded {file}"
 
 
 def main():
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         futures = [executor.submit(insert_file, f'{af_embedding_folder}/{df}') for df in os.listdir(af_embedding_folder)]
-
-        for future in concurrent.futures.as_completed(futures):
-            print(future.result())
+        for result in concurrent.futures.as_completed(futures):
+            print(result)
 
     embedding_db.flush()
     embedding_db.index_collection()
