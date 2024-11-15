@@ -109,7 +109,8 @@ class EmbeddingDB:
 
         # Create the index on the 'id' field
         self.collection.create_index(field_name="id", index_params=index_params)
+        print("Index created with cosine distance metric.")
 
         # Optionally, load the collection to memory for faster queries
         self.collection.load()
-        print("Index created with cosine distance metric.")
+        print("Collection loaded to memory.")

@@ -3,6 +3,7 @@ import os
 import pandas as pd
 
 from embedding_db import EmbeddingDB
+import multiprocessing as mp
 
 af_embedding_folder = "/mnt/vdc1/computed-models/embeddings"
 collection_name = 'af_embeddings'
@@ -14,11 +15,13 @@ def main():
         collection_name,
         dim
     )
-    for df in os.listdir(af_embedding_folder):
-        print(f"Loading embeddings from {df}")
-        embedding_db.insert_df(
-            pd.read_pickle(f'{af_embedding_folder}/{df}')
-        )
+    num_processes = mp.cpu_count()
+    with mp.Pool(processes=num_processes) as pool:
+        for _ in pool.imap_unordered(
+                lambda file: pd.read_pickle(file),
+                [f'{af_embedding_folder}/{df}' for df in os.listdir(af_embedding_folder)]
+        ):
+            pass
     embedding_db.index_collection()
 
 
