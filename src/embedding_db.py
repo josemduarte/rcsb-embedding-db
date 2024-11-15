@@ -10,7 +10,7 @@ class EmbeddingDB:
     PORT = '19530'
     ID_FIELD = 'id'
     EMBEDDING_FIELD = 'embedding'
-    BATCH_SIZE = 10000
+    BATCH_SIZE = 1000
 
     def __init__(
             self,
