@@ -25,11 +25,7 @@ def main():
     num_processes = mp.cpu_count()
     print(f"Using {num_processes} CPU cores")
     with mp.Pool(num_processes) as pool:
-        for _ in pool.imap_unordered(
-                insert_file,
-                [f'{af_embedding_folder}/{df}' for df in os.listdir(af_embedding_folder)]
-        ):
-            pass
+        pool.starmap(insert_file, [f'{af_embedding_folder}/{df}' for df in os.listdir(af_embedding_folder)])
 
     embedding_db.flush()
     embedding_db.index_collection()
