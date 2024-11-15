@@ -69,6 +69,7 @@ class EmbeddingDB:
             embeddings   # List of embeddings
         ]
 
+        print(f"Inserting {len(ids)} rows into collection {self.collection.name}")
         insert_result = self.collection.insert(entities)
         print(f"Inserted {len(insert_result.primary_keys)} entities into the collection.")
 

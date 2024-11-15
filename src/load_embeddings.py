@@ -15,6 +15,7 @@ def main():
         dim
     )
     for df in os.listdir(af_embedding_folder):
+        print(f"Loading embeddings from {df}")
         embedding_db.insert_df(
             pd.read_pickle(f'{af_embedding_folder}/{df}')
         )
