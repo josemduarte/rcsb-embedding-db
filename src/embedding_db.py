@@ -57,24 +57,35 @@ class EmbeddingDB:
 
         self.collection = Collection(name=collection_name, schema=collection_schema)
 
-    def insert_df(self, df):
+    def insert_df(self, df, batch_size=10000):
         if not {self.ID_FIELD, self.EMBEDDING_FIELD}.issubset(df.columns):
             raise ValueError(f"DataFrame must contain '{self.ID_FIELD}' and '{self.EMBEDDING_FIELD}' columns.")
 
-        ids = df[self.ID_FIELD].tolist()
-        embeddings = [embedding.tolist() for embedding in df[self.EMBEDDING_FIELD]]
+        total_rows = len(df)
+        num_batches = (total_rows + batch_size - 1) // batch_size  # Calculate the number of batches needed
 
-        entities = [
-            ids,         # List of identifiers
-            embeddings   # List of embeddings
-        ]
+        print(f"Total rows: {total_rows}, Batch size: {batch_size}, Number of batches: {num_batches}")
 
-        print(f"Inserting {len(ids)} rows into collection {self.collection.name}")
-        insert_result = self.collection.insert(entities)
-        print(f"Inserted {len(insert_result.primary_keys)} entities into the collection.")
+        for batch_num in range(num_batches):
+            start_idx = batch_num * batch_size
+            end_idx = min(start_idx + batch_size, total_rows)
+            batch_df = df.iloc[start_idx:end_idx]
 
-        # Flush to make sure data is persisted
+            ids = batch_df[self.ID_FIELD].tolist()
+            embeddings = [embedding.tolist() for embedding in batch_df[self.EMBEDDING_FIELD]]
+
+            entities = [
+                ids,         # List of identifiers
+                embeddings   # List of embeddings
+            ]
+
+            print(f"Inserting batch {batch_num + 1}/{num_batches}, rows {start_idx} to {end_idx}")
+            insert_result = self.collection.insert(entities)
+            print(f"Inserted {len(insert_result.primary_keys)} entities into the collection.")
+
+        # Flush after all batches are inserted to ensure data is persisted
         self.collection.flush()
+        print("All data inserted and flushed.")
 
     def index_collection(self):
         # Create an index on the embedding field with cosine distance
