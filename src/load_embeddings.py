@@ -24,8 +24,8 @@ def main():
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         futures = [executor.submit(insert_file, f'{af_embedding_folder}/{df}') for df in os.listdir(af_embedding_folder)]
-        for result in concurrent.futures.as_completed(futures):
-            print(result)
+        for future in concurrent.futures.as_completed(futures):
+            print(future.result())
 
     embedding_db.flush()
     embedding_db.index_collection()
