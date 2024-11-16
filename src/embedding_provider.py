@@ -51,5 +51,8 @@ if __name__ == '__main__':
     embedding_provider = EmbeddingProvider(
         collection_name
     )
-    print(embedding_provider.get_by_id("AF_AFA0A009E233F1"))
+    result = embedding_provider.get_by_id("AF_AFA0A009E233F1")
+    print(
+        embedding_provider.get_by_embedding(result)
+    )
 
