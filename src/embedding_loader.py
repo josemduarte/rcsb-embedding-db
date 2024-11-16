@@ -4,7 +4,7 @@ from pymilvus import (
 )
 
 
-class EmbeddingDB:
+class EmbeddingLoader:
 
     HOST = 'localhost'
     PORT = '19530'

@@ -2,21 +2,21 @@ import os
 
 import pandas as pd
 
-from embedding_db import EmbeddingDB
+from embedding_loader import EmbeddingLoader
 import concurrent.futures
 
 
 af_embedding_folder = "/mnt/vdc1/computed-models/embeddings"
 collection_name = 'af_embeddings'
 dim = 1280
-embedding_db = EmbeddingDB(
+embedding_loader = EmbeddingLoader(
     collection_name,
     dim
 )
 
 
 def insert_file(file):
-    embedding_db.insert_df(pd.read_pickle(file))
+    embedding_loader.insert_df(pd.read_pickle(file))
     return f"Loaded {file}"
 
 
@@ -27,8 +27,8 @@ def main():
         for future in concurrent.futures.as_completed(futures):
             print(future.result())
 
-    embedding_db.flush()
-    embedding_db.index_collection()
+    embedding_loader.flush()
+    embedding_loader.index_collection()
 
 
 if __name__ == '__main__':
