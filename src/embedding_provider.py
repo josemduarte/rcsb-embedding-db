@@ -38,7 +38,7 @@ class EmbeddingProvider:
 
     def get_by_id(self, query_id):
         result = self.collection.query(
-            expr=f"{self.ID_FIELD} == {query_id}",
+            expr=f'{self.ID_FIELD} == "{query_id}"',
             output_fields=[self.EMBEDDING_FIELD]
         )
         if len(result) == 0:
