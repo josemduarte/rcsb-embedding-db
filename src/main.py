@@ -27,15 +27,18 @@ async def search_chain(
 ):
 
     rcsb_embedding = embedding_provider.get_by_id(rcsb_id)
-    result = {}
+    if not rcsb_embedding:
+        rcsb_embedding = embedding_provider.get_by_id("AF_AFA0A009E3R5F1")
+
+    search_result = embedding_provider.get_by_embedding(rcsb_embedding)
     results = [
         {
             "index": idx,
-            "instance_id": x,
-            "img_url": img_url(x),
-            "alignment_url": alignment_url(rcsb_id, x),
-            "score": y
-        } for idx, (x, y) in enumerate(zip(result['ids'][0], result['distances'][0]))
+            "instance_id": r.id,
+            "img_url": img_url(r.id),
+            "alignment_url": alignment_url(rcsb_id, r.id),
+            "score": r.distance
+        } for idx, r in enumerate(search_result[0])
     ]
 
     context = {
@@ -56,55 +59,11 @@ async def search_chain(
 @app.get("/", response_class=HTMLResponse)
 @app.get("/embedding_search", response_class=HTMLResponse)
 async def form(request: Request):
-    random_id = ".".join(random.choice(os.listdir(embedding_path)).split(".")[0:2])
+    random_id = "AF_AFA0A009E3R5F1"
     context = {"search_id": random_id, "request": request}
     return templates.TemplateResponse(
         name="index.html.jinja", context=context
     )
-
-
-@app.get("/search/chain/{entry_id}/{asym_id}", response_class=JSONResponse)
-async def search_chain(request: Request, entry_id: str, asym_id: str, tm_threshold: float = 80):
-    rcsb_id = f"{entry_id}.{asym_id}"
-    if not os.path.isfile(f"{embedding_path}/{rcsb_id}.csv"):
-        return []
-    rcsb_embedding = list(pd.read_csv(f"{embedding_path}/{rcsb_id}.csv").iloc[:, 0].values)
-    result = chain_collection.query(
-        query_embeddings=[rcsb_embedding],
-        n_results=10000
-    )
-    return [
-        {
-            "geometry_score": arches_score(y),
-            "total_score": arches_score(y),
-            "rcsb_shape_container_identifiers": {
-                "entry_id": x.split(".")[0],
-                "asym_id": x.split(".")[1]
-            },
-        } for idx, (x, y) in enumerate(zip(result['ids'][0], result['distances'][0])) if arches_score(y) >= tm_threshold
-    ]
-
-
-@app.get("/search/assembly/{entry_id}/{assembly_id}", response_class=JSONResponse)
-async def search_assembly(request: Request, entry_id: str, assembly_id: str, tm_threshold: float = 80):
-    rcsb_id = f"{entry_id}-{assembly_id}"
-    if not os.path.isfile(f"{assembly_path}/{rcsb_id}.csv"):
-        return []
-    rcsb_embedding = list(pd.read_csv(f"{assembly_path}/{rcsb_id}.csv").iloc[:, 0].values)
-    result = assembly_collection.query(
-        query_embeddings=[rcsb_embedding],
-        n_results=10000
-    )
-    return [
-        {
-            "geometry_score": arches_score(y),
-            "total_score": arches_score(y),
-            "rcsb_shape_container_identifiers": {
-                "entry_id": x.split("-")[0],
-                "assembly_id": x.split("-")[1]
-            },
-        } for idx, (x, y) in enumerate(zip(result['ids'][0], result['distances'][0])) if arches_score(y) >= tm_threshold
-    ]
 
 
 def ready_results(results, threshold_set):
