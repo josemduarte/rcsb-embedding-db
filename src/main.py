@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from embedding_provider import EmbeddingProvider
+from src.embedding_provider import EmbeddingProvider
 from src.utils import img_url, alignment_url, arches_score
 
 
