@@ -35,7 +35,6 @@ async def search_chain(
         {
             "index": idx,
             "instance_id": r.id,
-            "img_url": img_url(r.id),
             "alignment_url": alignment_url(rcsb_id, r.id),
             "score": r.distance
         } for idx, r in enumerate(search_result[0])
