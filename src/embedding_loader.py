@@ -86,10 +86,7 @@ class EmbeddingLoader:
                     ids,  # List of identifiers
                     embeddings  # List of embeddings
                 ]
-
-                print(f"Inserting batch {batch_num + 1}/{num_batches}, rows {start_idx} to {end_idx}")
-                insert_result = self.collection.insert(entities)
-                print(f"Inserted {len(insert_result.primary_keys)} entities into the collection.")
+                self.collection.insert(entities)
 
     def flush(self):
         self.collection.flush()
