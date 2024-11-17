@@ -38,7 +38,10 @@ async def search_chain(
             name="null-instance.html.jinja", context=context
         )
 
-    search_result = embedding_provider.get_by_embedding(rcsb_embedding)
+    search_result = embedding_provider.get_by_embedding(
+        rcsb_embedding,
+        include_csm
+    )
     results = [
         {
             "index": idx,

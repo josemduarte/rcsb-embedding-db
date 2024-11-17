@@ -10,6 +10,7 @@ class EmbeddingProvider:
     PORT = '19530'
     ID_FIELD = 'id'
     EMBEDDING_FIELD = 'embedding'
+    CSM_FLAG = 'is_csm'
     BATCH_SIZE = 2000
 
     def __init__(
@@ -25,9 +26,10 @@ class EmbeddingProvider:
             port=self.PORT
         )
 
-    def get_by_embedding(self, query_embedding):
+    def get_by_embedding(self, query_embedding, is_csm=True):
         return self.collection.search(
             data=[query_embedding],
+            expr=f'{self.CSM_FLAG} == False' if not is_csm else None,
             anns_field=self.EMBEDDING_FIELD,
             limit=100,
             param={
