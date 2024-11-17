@@ -1,6 +1,6 @@
 
 from pymilvus import (
-    connections, FieldSchema, CollectionSchema, DataType, Collection, list_collections, utility
+    connections, Collection
 )
 
 
