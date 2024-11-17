@@ -44,14 +44,3 @@ class EmbeddingProvider:
         if len(result) == 0:
             return None
         return result[0][self.EMBEDDING_FIELD]
-
-
-if __name__ == '__main__':
-    embedding_provider = EmbeddingProvider(
-        collection_name='af_embeddings'
-    )
-    result = embedding_provider.get_by_id("AF_AFA0A009E233F1")
-    print(
-        embedding_provider.get_by_embedding(result)
-    )
-
