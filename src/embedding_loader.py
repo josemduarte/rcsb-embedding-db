@@ -84,10 +84,12 @@ class EmbeddingLoader:
 
                 ids = batch_df[self.ID_FIELD].tolist()
                 embeddings = batch_df[self.EMBEDDING_FIELD].tolist()
+                csm_flags = batch_df[self.CSM_FLAG].tolist()
 
                 entities = [
                     ids,  # List of identifiers
-                    embeddings  # List of embeddings
+                    embeddings,
+                    csm_flags# List of embeddings
                 ]
                 self.collection.insert(entities)
 
