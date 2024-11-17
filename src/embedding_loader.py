@@ -80,7 +80,7 @@ class EmbeddingLoader:
                 batch_df = df.iloc[start_idx:end_idx]
 
                 ids = batch_df[self.ID_FIELD].tolist()
-                embeddings = [embedding.tolist() for embedding in batch_df[self.EMBEDDING_FIELD]]
+                embeddings = batch_df[self.EMBEDDING_FIELD].tolist()
 
                 entities = [
                     ids,  # List of identifiers
