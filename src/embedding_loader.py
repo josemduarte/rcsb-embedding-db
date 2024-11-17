@@ -43,7 +43,7 @@ class EmbeddingLoader:
             name=self.ID_FIELD,
             dtype=DataType.VARCHAR,
             is_primary=True,
-            max_length=100  # Adjust max_length based on your identifier length
+            max_length=20  # Adjust max_length based on your identifier length
         )
 
         embedding_field = FieldSchema(
@@ -67,9 +67,9 @@ class EmbeddingLoader:
 
         self.collection = Collection(name=collection_name, schema=collection_schema)
 
-    def insert_folder(self, embedding_folder):
+    def insert_folder(self, embedding_folder, csm_flag):
         print(f"Loading embeddings folder {embedding_folder}")
-        for df in load_embeddings_in_batches(embedding_folder, False, 5*self.BATCH_SIZE):
+        for df in load_embeddings_in_batches(embedding_folder, csm_flag, 5*self.BATCH_SIZE):
             if not {self.ID_FIELD, self.EMBEDDING_FIELD, self.CSM_FLAG}.issubset(df.columns):
                 raise ValueError(f"DataFrame must contain '{self.ID_FIELD}', '{self.EMBEDDING_FIELD}' and '{self.CSM_FLAG}' columns.")
 
@@ -97,6 +97,7 @@ class EmbeddingLoader:
         self.collection.flush()
 
     def index_collection(self):
+        print(f"Indexing collection")
         # Create an index on the embedding field with cosine distance
         index_params = {
             "metric_type": "COSINE",
