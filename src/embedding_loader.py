@@ -62,9 +62,11 @@ class EmbeddingLoader:
         self.collection = Collection(name=collection_name, schema=collection_schema)
 
     def insert_folder(self, embedding_folder):
+        print(f"Loading embeddings folder {embedding_folder}")
         df = load_embeddings(embedding_folder)
         if not {self.ID_FIELD, self.EMBEDDING_FIELD}.issubset(df.columns):
             raise ValueError(f"DataFrame must contain '{self.ID_FIELD}' and '{self.EMBEDDING_FIELD}' columns.")
+        print(f"Loaded {len(df)} embeddings")
 
         batch_size = self.BATCH_SIZE
         total_rows = len(df)
