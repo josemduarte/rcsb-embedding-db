@@ -66,13 +66,10 @@ class EmbeddingLoader:
         for df in load_embeddings_in_batches(embedding_folder, 5*self.BATCH_SIZE):
             if not {self.ID_FIELD, self.EMBEDDING_FIELD}.issubset(df.columns):
                 raise ValueError(f"DataFrame must contain '{self.ID_FIELD}' and '{self.EMBEDDING_FIELD}' columns.")
-            print(f"Loaded {len(df)} embeddings")
 
             batch_size = self.BATCH_SIZE
             total_rows = len(df)
             num_batches = (total_rows + batch_size - 1) // batch_size  # Calculate the number of batches needed
-
-            print(f"Total rows: {total_rows}, Batch size: {batch_size}, Number of batches: {num_batches}")
 
             for batch_num in range(num_batches):
                 start_idx = batch_num * batch_size
