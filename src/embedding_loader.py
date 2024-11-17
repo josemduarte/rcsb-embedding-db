@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from pymilvus import (
     connections, FieldSchema, CollectionSchema, DataType, Collection, list_collections, utility
@@ -8,7 +9,6 @@ from pymilvus import (
 
 
 class EmbeddingLoader:
-
     HOST = 'localhost'
     PORT = '19530'
     ID_FIELD = 'id'
@@ -83,8 +83,8 @@ class EmbeddingLoader:
             embeddings = [embedding.tolist() for embedding in batch_df[self.EMBEDDING_FIELD]]
 
             entities = [
-                ids,         # List of identifiers
-                embeddings   # List of embeddings
+                ids,  # List of identifiers
+                embeddings  # List of embeddings
             ]
 
             print(f"Inserting batch {batch_num + 1}/{num_batches}, rows {start_idx} to {end_idx}")
@@ -109,7 +109,7 @@ class EmbeddingLoader:
         # Define the index parameters for an inverted index
         index_params = {
             "index_type": "AUTOINDEX",  # Use 'AUTOINDEX' for scalar fields
-            "params": {}               # Additional parameters can be specified if needed
+            "params": {}  # Additional parameters can be specified if needed
         }
 
         # Create the index on the 'id' field
@@ -126,7 +126,8 @@ class EmbeddingLoader:
 
 def load_embeddings(folder_path):
     data = []
-    for filename in os.listdir(folder_path):
+    filenames = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+    for filename in tqdm(filenames, desc="Loading embeddings", unit="file"):
         file_path = os.path.join(folder_path, filename)
         if os.path.isfile(file_path):
             file_id, _ = os.path.splitext(filename)  # Remove extension to get Id
