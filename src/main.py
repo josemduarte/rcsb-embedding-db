@@ -39,7 +39,8 @@ async def search_chain(
 
     search_result = embedding_provider.get_by_embedding(
         rcsb_embedding,
-        include_csm
+        include_csm,
+        n_results
     )
     results = [
         {

@@ -26,12 +26,12 @@ class EmbeddingProvider:
             port=self.PORT
         )
 
-    def get_by_embedding(self, query_embedding, is_csm=True):
+    def get_by_embedding(self, query_embedding, is_csm=True, n_results=100):
         return self.collection.search(
             data=[query_embedding],
             expr=f'{self.CSM_FLAG} == False' if not is_csm else None,
             anns_field=self.EMBEDDING_FIELD,
-            limit=100,
+            limit=n_results,
             param={
                 "metric_type": "COSINE",
                 "params": {}
