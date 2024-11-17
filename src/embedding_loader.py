@@ -1,3 +1,6 @@
+import os
+import numpy as np
+import pandas as pd
 
 from pymilvus import (
     connections, FieldSchema, CollectionSchema, DataType, Collection, list_collections, utility
@@ -58,7 +61,8 @@ class EmbeddingLoader:
 
         self.collection = Collection(name=collection_name, schema=collection_schema)
 
-    def insert_df(self, df):
+    def insert_folder(self, embedding_folder):
+        df = load_embeddings(embedding_folder)
         if not {self.ID_FIELD, self.EMBEDDING_FIELD}.issubset(df.columns):
             raise ValueError(f"DataFrame must contain '{self.ID_FIELD}' and '{self.EMBEDDING_FIELD}' columns.")
 
@@ -93,7 +97,7 @@ class EmbeddingLoader:
         index_params = {
             "metric_type": "COSINE",
             "index_type": "HNSW",  # You can choose other index types as needed
-            "params": {"M": 16, "efConstruction": 100}
+            "params": {"M": 16, "efConstruction": 128}
         }
         self.collection.create_index(
             field_name=self.EMBEDDING_FIELD,
@@ -116,3 +120,24 @@ class EmbeddingLoader:
         # Optionally, load the collection to memory for faster queries
         self.collection.load()
         print("Collection loaded to memory.")
+
+
+def load_embeddings(folder_path):
+    data = []
+    for filename in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, filename)
+        if os.path.isfile(file_path):
+            file_id, _ = os.path.splitext(filename)  # Remove extension to get Id
+            try:
+                embedding = np.loadtxt(file_path)
+                embedding = embedding.tolist()
+                data.append({
+                    f'{EmbeddingLoader.ID_FIELD}': file_id,
+                    f'{EmbeddingLoader.EMBEDDING_FIELD}': embedding
+                })
+            except Exception as e:
+                print(f"Error loading file {filename}: {e}")
+                continue  # Skip files that cause errors
+
+    df = pd.DataFrame(data)
+    return df
