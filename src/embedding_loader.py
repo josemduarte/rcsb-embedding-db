@@ -13,6 +13,7 @@ class EmbeddingLoader:
     PORT = '19530'
     ID_FIELD = 'id'
     EMBEDDING_FIELD = 'embedding'
+    CSM_FLAG = 'is_csm'
     BATCH_SIZE = 2000
 
     def __init__(
@@ -51,8 +52,13 @@ class EmbeddingLoader:
             dim=dim
         )
 
+        is_csm = FieldSchema(
+            name=self.CSM_FLAG,
+            dtype=DataType.BOOL
+        )
+
         collection_schema = CollectionSchema(
-            fields=[id_field, embedding_field],
+            fields=[id_field, embedding_field, is_csm],
             description="Collection storing embeddings with cosine distance."
         )
 
@@ -63,9 +69,9 @@ class EmbeddingLoader:
 
     def insert_folder(self, embedding_folder):
         print(f"Loading embeddings folder {embedding_folder}")
-        for df in load_embeddings_in_batches(embedding_folder, 5*self.BATCH_SIZE):
-            if not {self.ID_FIELD, self.EMBEDDING_FIELD}.issubset(df.columns):
-                raise ValueError(f"DataFrame must contain '{self.ID_FIELD}' and '{self.EMBEDDING_FIELD}' columns.")
+        for df in load_embeddings_in_batches(embedding_folder, False, 5*self.BATCH_SIZE):
+            if not {self.ID_FIELD, self.EMBEDDING_FIELD, self.CSM_FLAG}.issubset(df.columns):
+                raise ValueError(f"DataFrame must contain '{self.ID_FIELD}', '{self.EMBEDDING_FIELD}' and '{self.CSM_FLAG}' columns.")
 
             batch_size = self.BATCH_SIZE
             total_rows = len(df)
@@ -111,6 +117,10 @@ class EmbeddingLoader:
             field_name=self.ID_FIELD,
             index_params=index_params
         )
+        self.collection.create_index(
+            field_name=self.CSM_FLAG,
+            index_params=index_params
+        )
         print("Index created with cosine distance metric.")
 
         # Optionally, load the collection to memory for faster queries
@@ -118,25 +128,10 @@ class EmbeddingLoader:
         print("Collection loaded to memory.")
 
 
-def load_embeddings_in_batches(folder_path, batch_size=10000):
-    """
-    Load embeddings from files in a folder in batches, yielding a DataFrame for each batch.
-
-    Parameters:
-        folder_path (str): Path to the folder containing embedding files.
-        batch_size (int): Number of files to process in each batch.
-
-    Yields:
-        pd.DataFrame: DataFrame with 'Id' and 'embedding' columns for each batch.
-    """
-    # List all files in the folder
+def load_embeddings_in_batches(folder_path, csm_flag, batch_size=10000):
     filenames = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
     total_files = len(filenames)
-
-    # Sort filenames for consistency (optional)
     filenames.sort()
-
-    # Initialize the progress bar
     with tqdm(total=total_files, desc="Loading embeddings", unit="file") as pbar:
         for i in range(0, total_files, batch_size):
             batch_files = filenames[i:i+batch_size]
@@ -145,21 +140,17 @@ def load_embeddings_in_batches(folder_path, batch_size=10000):
                 file_path = os.path.join(folder_path, filename)
                 file_id, _ = os.path.splitext(filename)  # Remove extension to get Id
                 try:
-                    # Load the embedding from the file
                     embedding = np.loadtxt(file_path)
-                    # Ensure the embedding is a list
                     embedding = embedding.tolist()
                     data.append({
-                      f'{EmbeddingLoader.ID_FIELD}': file_id,
-                      f'{EmbeddingLoader.EMBEDDING_FIELD}': embedding
+                        f'{EmbeddingLoader.ID_FIELD}': file_id,
+                        f'{EmbeddingLoader.EMBEDDING_FIELD}': embedding,
+                        f'{EmbeddingLoader.CSM_FLAG}': csm_flag
                     })
                 except Exception as e:
                     print(f"Error loading file {filename}: {e}")
-                    # You might want to handle the exception or skip the file
                 finally:
-                    # Update the progress bar for each file processed
                     pbar.update(1)
-            # Yield DataFrame for the current batch
             df_batch = pd.DataFrame(data)
             yield df_batch
 
