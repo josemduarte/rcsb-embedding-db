@@ -1,13 +1,12 @@
 import os
 import random
 
-import pandas as pd
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from src.embedding_provider import EmbeddingProvider
-from src.utils import img_url, alignment_url, arches_score
+from src.utils import img_url, alignment_url
 
 
 app = FastAPI()
