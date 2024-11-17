@@ -43,7 +43,7 @@ class EmbeddingLoader:
             name=self.ID_FIELD,
             dtype=DataType.VARCHAR,
             is_primary=True,
-            max_length=20  # Adjust max_length based on your identifier length
+            max_length=50  # Adjust max_length based on your identifier length
         )
 
         embedding_field = FieldSchema(

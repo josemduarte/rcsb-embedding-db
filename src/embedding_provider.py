@@ -47,9 +47,8 @@ class EmbeddingProvider:
 
 
 if __name__ == '__main__':
-    collection_name = 'af_embeddings'
     embedding_provider = EmbeddingProvider(
-        collection_name
+        collection_name='af_embeddings'
     )
     result = embedding_provider.get_by_id("AF_AFA0A009E233F1")
     print(
