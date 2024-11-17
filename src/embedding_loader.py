@@ -63,33 +63,33 @@ class EmbeddingLoader:
 
     def insert_folder(self, embedding_folder):
         print(f"Loading embeddings folder {embedding_folder}")
-        df = load_embeddings(embedding_folder)
-        if not {self.ID_FIELD, self.EMBEDDING_FIELD}.issubset(df.columns):
-            raise ValueError(f"DataFrame must contain '{self.ID_FIELD}' and '{self.EMBEDDING_FIELD}' columns.")
-        print(f"Loaded {len(df)} embeddings")
+        for df in load_embeddings_in_batches(embedding_folder, 5*self.BATCH_SIZE):
+            if not {self.ID_FIELD, self.EMBEDDING_FIELD}.issubset(df.columns):
+                raise ValueError(f"DataFrame must contain '{self.ID_FIELD}' and '{self.EMBEDDING_FIELD}' columns.")
+            print(f"Loaded {len(df)} embeddings")
 
-        batch_size = self.BATCH_SIZE
-        total_rows = len(df)
-        num_batches = (total_rows + batch_size - 1) // batch_size  # Calculate the number of batches needed
+            batch_size = self.BATCH_SIZE
+            total_rows = len(df)
+            num_batches = (total_rows + batch_size - 1) // batch_size  # Calculate the number of batches needed
 
-        print(f"Total rows: {total_rows}, Batch size: {batch_size}, Number of batches: {num_batches}")
+            print(f"Total rows: {total_rows}, Batch size: {batch_size}, Number of batches: {num_batches}")
 
-        for batch_num in range(num_batches):
-            start_idx = batch_num * batch_size
-            end_idx = min(start_idx + batch_size, total_rows)
-            batch_df = df.iloc[start_idx:end_idx]
+            for batch_num in range(num_batches):
+                start_idx = batch_num * batch_size
+                end_idx = min(start_idx + batch_size, total_rows)
+                batch_df = df.iloc[start_idx:end_idx]
 
-            ids = batch_df[self.ID_FIELD].tolist()
-            embeddings = [embedding.tolist() for embedding in batch_df[self.EMBEDDING_FIELD]]
+                ids = batch_df[self.ID_FIELD].tolist()
+                embeddings = [embedding.tolist() for embedding in batch_df[self.EMBEDDING_FIELD]]
 
-            entities = [
-                ids,  # List of identifiers
-                embeddings  # List of embeddings
-            ]
+                entities = [
+                    ids,  # List of identifiers
+                    embeddings  # List of embeddings
+                ]
 
-            print(f"Inserting batch {batch_num + 1}/{num_batches}, rows {start_idx} to {end_idx}")
-            insert_result = self.collection.insert(entities)
-            print(f"Inserted {len(insert_result.primary_keys)} entities into the collection.")
+                print(f"Inserting batch {batch_num + 1}/{num_batches}, rows {start_idx} to {end_idx}")
+                insert_result = self.collection.insert(entities)
+                print(f"Inserted {len(insert_result.primary_keys)} entities into the collection.")
 
     def flush(self):
         self.collection.flush()
@@ -124,23 +124,45 @@ class EmbeddingLoader:
         print("Collection loaded to memory.")
 
 
-def load_embeddings(folder_path):
-    data = []
-    filenames = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
-    for filename in tqdm(filenames, desc="Loading embeddings", unit="file"):
-        file_path = os.path.join(folder_path, filename)
-        if os.path.isfile(file_path):
-            file_id, _ = os.path.splitext(filename)  # Remove extension to get Id
-            try:
-                embedding = np.loadtxt(file_path)
-                embedding = embedding.tolist()
-                data.append({
-                    f'{EmbeddingLoader.ID_FIELD}': file_id,
-                    f'{EmbeddingLoader.EMBEDDING_FIELD}': embedding
-                })
-            except Exception as e:
-                print(f"Error loading file {filename}: {e}")
-                continue  # Skip files that cause errors
+def load_embeddings_in_batches(folder_path, batch_size=10000):
+    """
+    Load embeddings from files in a folder in batches, yielding a DataFrame for each batch.
 
-    df = pd.DataFrame(data)
-    return df
+    Parameters:
+        folder_path (str): Path to the folder containing embedding files.
+        batch_size (int): Number of files to process in each batch.
+
+    Yields:
+        pd.DataFrame: DataFrame with 'Id' and 'embedding' columns for each batch.
+    """
+    # List all files in the folder
+    filenames = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+    total_files = len(filenames)
+
+    # Sort filenames for consistency (optional)
+    filenames.sort()
+
+    # Initialize the progress bar
+    with tqdm(total=total_files, desc="Loading embeddings", unit="file") as pbar:
+        for i in range(0, total_files, batch_size):
+            batch_files = filenames[i:i+batch_size]
+            data = []
+            for filename in batch_files:
+                file_path = os.path.join(folder_path, filename)
+                file_id, _ = os.path.splitext(filename)  # Remove extension to get Id
+                try:
+                    # Load the embedding from the file
+                    embedding = np.loadtxt(file_path)
+                    # Ensure the embedding is a list
+                    embedding = embedding.tolist()
+                    data.append({'Id': file_id, 'embedding': embedding})
+                except Exception as e:
+                    print(f"Error loading file {filename}: {e}")
+                    # You might want to handle the exception or skip the file
+                finally:
+                    # Update the progress bar for each file processed
+                    pbar.update(1)
+            # Yield DataFrame for the current batch
+            df_batch = pd.DataFrame(data)
+            yield df_batch
+
