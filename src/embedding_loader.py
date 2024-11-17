@@ -155,7 +155,10 @@ def load_embeddings_in_batches(folder_path, batch_size=10000):
                     embedding = np.loadtxt(file_path)
                     # Ensure the embedding is a list
                     embedding = embedding.tolist()
-                    data.append({'Id': file_id, 'embedding': embedding})
+                    data.append({
+                      f'{EmbeddingLoader.ID_FIELD}': file_id,
+                      f'{EmbeddingLoader.EMBEDDING_FIELD}': embedding
+                    })
                 except Exception as e:
                     print(f"Error loading file {filename}: {e}")
                     # You might want to handle the exception or skip the file
