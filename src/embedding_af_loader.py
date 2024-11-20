@@ -1,4 +1,7 @@
 
+import numpy as np
+from tqdm import tqdm
+
 from pymilvus import (
     connections, FieldSchema, CollectionSchema, DataType, Collection, list_collections, utility
 )
@@ -66,24 +69,21 @@ class EmbeddingLoader:
         total_rows = len(df)
         num_batches = (total_rows + batch_size - 1) // batch_size  # Calculate the number of batches needed
 
-        print(f"Total rows: {total_rows}, Batch size: {batch_size}, Number of batches: {num_batches}")
+        with tqdm(total=num_batches, desc="Loading embeddings", unit="batch") as pbar:
+            for batch_num in range(num_batches):
+                start_idx = batch_num * batch_size
+                end_idx = min(start_idx + batch_size, total_rows)
+                batch_df = df.iloc[start_idx:end_idx]
 
-        for batch_num in range(num_batches):
-            start_idx = batch_num * batch_size
-            end_idx = min(start_idx + batch_size, total_rows)
-            batch_df = df.iloc[start_idx:end_idx]
+                ids = batch_df[self.ID_FIELD].tolist()
+                embeddings = [(embedding/np.linalg.norm(embedding)).tolist() for embedding in batch_df[self.EMBEDDING_FIELD]]
 
-            ids = batch_df[self.ID_FIELD].tolist()
-            embeddings = [embedding.tolist() for embedding in batch_df[self.EMBEDDING_FIELD]]
-
-            entities = [
-                ids,         # List of identifiers
-                embeddings   # List of embeddings
-            ]
-
-            print(f"Inserting batch {batch_num + 1}/{num_batches}, rows {start_idx} to {end_idx}")
-            insert_result = self.collection.insert(entities)
-            print(f"Inserted {len(insert_result.primary_keys)} entities into the collection.")
+                entities = [
+                    ids,         # List of identifiers
+                    embeddings   # List of embeddings
+                ]
+                self.collection.insert(entities)
+                pbar.update(1)
 
     def flush(self):
         self.collection.flush()
@@ -91,9 +91,9 @@ class EmbeddingLoader:
     def index_collection(self):
         # Create an index on the embedding field with cosine distance
         index_params = {
-            "metric_type": "COSINE",
-            "index_type": "HNSW",  # You can choose other index types as needed
-            "params": {"M": 16, "efConstruction": 100}
+            "metric_type": "IP",
+            "index_type": "DISKANN",  # You can choose other index types as needed
+            "params": {}
         }
         self.collection.create_index(
             field_name=self.EMBEDDING_FIELD,
