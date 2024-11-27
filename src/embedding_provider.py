@@ -1,6 +1,6 @@
 
 from pymilvus import (
-    connections, Collection
+    connections, Collection, MilvusClient
 )
 
 
@@ -18,7 +18,9 @@ class EmbeddingProvider:
             collection_name
     ):
         self.connect()
-        self.collection = Collection(name=collection_name)
+        self.collection_name = collection_name
+        self.collection = Collection(name=self.collection_name)
+        self.client = MilvusClient()
 
     def connect(self):
         connections.connect(
@@ -39,8 +41,9 @@ class EmbeddingProvider:
         )
 
     def get_by_id(self, query_id):
-        result = self.collection.query(
-            expr=f'{self.ID_FIELD} == "{query_id}"',
+        result = self.client.get(
+            collection_name=self.collection_name,
+            ids=[query_id],
             output_fields=[self.EMBEDDING_FIELD]
         )
         if len(result) == 0:
