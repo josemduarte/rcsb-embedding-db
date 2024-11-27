@@ -22,13 +22,14 @@ def insert_file(file):
 
 def main():
 
+    embedding_loader.index_collection()
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         futures = [executor.submit(insert_file, f'{af_embedding_folder}/{df}') for df in os.listdir(af_embedding_folder)]
         for future in concurrent.futures.as_completed(futures):
             print(future.result())
 
     embedding_loader.flush()
-    embedding_loader.index_collection()
+    embedding_loader.load_collection()
 
 
 if __name__ == '__main__':
