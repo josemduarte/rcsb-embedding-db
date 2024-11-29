@@ -99,21 +99,7 @@ class EmbeddingLoader:
             field_name=self.EMBEDDING_FIELD,
             index_params=index_params
         )
-
-        # # Define the index parameters for an inverted index
-        # index_params = {
-        #     "index_type": "AUTOINDEX",  # Use 'AUTOINDEX' for scalar fields
-        #     "params": {}               # Additional parameters can be specified if needed
-        # }
-
-        # # Create the index on the 'id' field
-        # self.collection.create_index(
-        #     field_name=self.ID_FIELD,
-        #     index_params=index_params
-        # )
-        # print("Index created with cosine distance metric.")
-
-        # Optionally, load the collection to memory for faster queries
+        print("Index created with cosine distance metric.")
 
     def load_collection(self):
         self.collection.load()
