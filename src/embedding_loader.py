@@ -115,11 +115,6 @@ class EmbeddingLoader:
             "params": {}  # Additional parameters can be specified if needed
         }
 
-        # Create the index on the 'id' field
-        self.collection.create_index(
-            field_name=self.ID_FIELD,
-            index_params=index_params
-        )
         self.collection.create_index(
             field_name=self.CSM_FLAG,
             index_params=index_params
