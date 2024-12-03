@@ -27,7 +27,7 @@ def create_index(es):
     mapping = {
         "mappings": {
             "properties": {
-                "id": {
+                "rcsb_id": {
                     "type": "keyword",
                     "index": True
                 },
@@ -54,8 +54,8 @@ def index_batch(es, df_batch):
                 "_index": INDEX_NAME,
                 "_id": index,
                 "_source": {
-                    "id": row['id'],
-                    "vector": row['embedding']
+                    "rcsb_id": row['id'],
+                    "struct-vector": row['embedding']
                 }
             }
         )
