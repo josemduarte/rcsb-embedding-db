@@ -2,6 +2,7 @@ import os
 import pandas as pd
 from elasticsearch import Elasticsearch, helpers
 import logging
+import time
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -12,8 +13,8 @@ INDEX_NAME = 'chain_struct_embeddings'
 ES_URL = os.getenv("ES_URL")
 ES_USER = os.getenv('ES_USER')
 ES_PWD = os.getenv('ES_PWD')
-BATCH_SIZE = 100
-MAX_VECS_TO_INDEX = 1000
+BATCH_SIZE = 1000
+MAX_VECS_TO_INDEX = 1000000
 
 
 def create_index(es):
@@ -76,7 +77,9 @@ def main():
     create_index(es)
 
     batch_index = 0
+    num_df_files_processed = 0
     over_max = False
+    start_time = time.time()
     for df in os.listdir(af_embedding_folder):
         file = f'{af_embedding_folder}/{df}'
         logger.info("Starting processing dataframe file %s" % file)
@@ -89,8 +92,12 @@ def main():
                 logger.info("Stopping indexing because we are over MAX_VECS_TO_INDEX=%d" % MAX_VECS_TO_INDEX)
                 over_max = True
                 break
+        logger.info("Done processing dataframe file %s" % file)
+        num_df_files_processed += 1
         if over_max:
             break
+    end_time = time.time()
+    logger.info(f"Finished indexing {num_df_files_processed} dataframe files in {end_time - start_time} s")
 
 if __name__ == '__main__':
     main()
