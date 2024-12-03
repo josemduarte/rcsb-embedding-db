@@ -52,7 +52,7 @@ def index_batch(es, df_batch):
         actions.append(
             {
                 "_index": INDEX_NAME,
-                "_id": index,
+                "_id": row['id'],
                 "_source": {
                     "rcsb_id": row['id'],
                     "struct-vector": row['embedding']
