@@ -7,7 +7,7 @@ import time
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-af_embedding_folder = "/data/struct_embeddings/embeddings-200M"
+AF_EMBEDDING_FOLDER = "/data/struct_embeddings/embeddings-200M"
 dim = 1280
 INDEX_NAME = 'chain_struct_embeddings'
 ES_URL = os.getenv("ES_URL")
@@ -70,12 +70,7 @@ def get_batches_from_df(df, batch_size):
         yield df.iloc[start_row:start_row + batch_size]
 
 
-def main():
-    # Connect to Elasticsearch
-    es = Elasticsearch([ES_URL], basic_auth=(ES_USER, ES_PWD), verify_certs=False)
-
-    create_index(es)
-
+def index_all(es, af_embedding_folder):
     batch_index = 0
     num_df_files_processed = 0
     over_max = False
@@ -98,6 +93,16 @@ def main():
             break
     end_time = time.time()
     logger.info(f"Finished indexing {num_df_files_processed} dataframe files in {end_time - start_time} s")
+
+
+def main():
+    # Connect to Elasticsearch
+    es = Elasticsearch([ES_URL], basic_auth=(ES_USER, ES_PWD), verify_certs=False)
+
+    create_index(es)
+
+    index_all(es, AF_EMBEDDING_FOLDER)
+
 
 if __name__ == '__main__':
     main()
