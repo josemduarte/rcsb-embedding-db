@@ -14,7 +14,7 @@ ES_URL = os.getenv("ES_URL")
 ES_USER = os.getenv('ES_USER')
 ES_PWD = os.getenv('ES_PWD')
 BATCH_SIZE = 1000
-MAX_VECS_TO_INDEX = 1000000
+MAX_VECS_TO_INDEX = 10000000
 
 
 def create_index(es):
@@ -24,6 +24,10 @@ def create_index(es):
         es.indices.delete(index=INDEX_NAME)
 
     # Create the index with the appropriate mapping
+    # Note type int8_hnsw is available since ~ 8.16 (definitely not available in 8.9)
+    # In my tests with 10M vectors in a single node ES cluster, int8_hnsw performs queries ~ 100x faster:
+    #  - baseline test on 8.9.1 ES (that doesn't even have the option), queries are ~ 10-20s
+    #  - int8_hnsw test on 8.16.1 ES, queries are ~ 100-700ms
     mapping = {
         "mappings": {
             "properties": {
@@ -35,7 +39,10 @@ def create_index(es):
                     "type": "dense_vector",
                     "dims": dim,
                     "similarity": "cosine",
-                    "index": True
+                    "index": True,
+                    "index_options": {
+                        "type": "int8_hnsw"
+                    }
                 }
             }
         }
