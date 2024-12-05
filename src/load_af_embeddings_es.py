@@ -82,14 +82,13 @@ def index_all(es, af_embedding_folder, index_name, batch_size, num_vecs_to_load,
 
     # Create thread pool executor
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-        futures = []
         for df in os.listdir(af_embedding_folder):
             file = f'{af_embedding_folder}/{df}'
             logger.info("Starting processing dataframe file %s" % file)
             data = pd.read_pickle(file)
             for batch in get_batches_from_df(data, batch_size):
                 logger.info("Submitting batch %d from file %s" % (batch_index, file))
-                futures.append(executor.submit(index_batch, es, batch, index_name))
+                executor.submit(index_batch, es, batch, index_name)
                 batch_index += 1
                 if batch_index * batch_size > num_vecs_to_load:
                     logger.info("Stopping indexing because we are over MAX_VECS_TO_INDEX=%d" % num_vecs_to_load)
@@ -101,7 +100,8 @@ def index_all(es, af_embedding_folder, index_name, batch_size, num_vecs_to_load,
                 break
         logger.info("Done submitting all batches to thread pool")
         # Wait for all threads to complete
-        concurrent.futures.wait(futures)
+        # concurrent.futures.wait(futures)
+        executor.shutdown(wait=True)
 
     end_time = time.time()
     logger.info(f"Finished indexing {num_df_files_processed} dataframe files in {end_time - start_time} s")
