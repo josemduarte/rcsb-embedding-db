@@ -3,25 +3,23 @@ import pandas as pd
 from elasticsearch import Elasticsearch, helpers
 import logging
 import time
+import argparse
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 AF_EMBEDDING_FOLDER = "/data/struct_embeddings/embeddings-200M"
 dim = 1280
-INDEX_NAME = 'chain_struct_embeddings'
 ES_URL = os.getenv("ES_URL")
 ES_USER = os.getenv('ES_USER')
 ES_PWD = os.getenv('ES_PWD')
-BATCH_SIZE = 1000
-MAX_VECS_TO_INDEX = 10000000
 
 
-def create_index(es):
+def create_index(es, index_name):
     # Delete the index if it already exists (optional)
-    if es.indices.exists(index=INDEX_NAME):
-        logger.info(f"Index {INDEX_NAME} already exists. Dropping index {INDEX_NAME}")
-        es.indices.delete(index=INDEX_NAME)
+    if es.indices.exists(index=index_name):
+        logger.info(f"Index {index_name} already exists. Dropping index {index_name}")
+        es.indices.delete(index=index_name)
 
     # Create the index with the appropriate mapping
     # Note type int8_hnsw is available since ~ 8.16 (definitely not available in 8.9)
@@ -47,18 +45,18 @@ def create_index(es):
             }
         }
     }
-    logger.info(f"Creating index {INDEX_NAME}")
-    es.indices.create(index=INDEX_NAME, body=mapping)
+    logger.info(f"Creating index {index_name}")
+    es.indices.create(index=index_name, body=mapping)
 
 
-def index_batch(es, df_batch):
+def index_batch(es, df_batch, index_name):
 
     # Prepare the data for bulk indexing
     actions = []
     for index, row in df_batch.iterrows():
         actions.append(
             {
-                "_index": INDEX_NAME,
+                "_index": index_name,
                 "_id": row['id'],
                 "_source": {
                     "rcsb_id": row['id'],
@@ -77,7 +75,7 @@ def get_batches_from_df(df, batch_size):
         yield df.iloc[start_row:start_row + batch_size]
 
 
-def index_all(es, af_embedding_folder):
+def index_all(es, af_embedding_folder, index_name, batch_size, num_vecs_to_load):
     batch_index = 0
     num_df_files_processed = 0
     over_max = False
@@ -86,12 +84,12 @@ def index_all(es, af_embedding_folder):
         file = f'{af_embedding_folder}/{df}'
         logger.info("Starting processing dataframe file %s" % file)
         data = pd.read_pickle(file)
-        for batch in get_batches_from_df(data, BATCH_SIZE):
+        for batch in get_batches_from_df(data, batch_size):
             logger.info("Indexing batch %d from file %s" % (batch_index, file))
-            index_batch(es, batch)
+            index_batch(es, batch, index_name)
             batch_index += 1
-            if batch_index * BATCH_SIZE > MAX_VECS_TO_INDEX:
-                logger.info("Stopping indexing because we are over MAX_VECS_TO_INDEX=%d" % MAX_VECS_TO_INDEX)
+            if batch_index * batch_size > num_vecs_to_load:
+                logger.info("Stopping indexing because we are over MAX_VECS_TO_INDEX=%d" % num_vecs_to_load)
                 over_max = True
                 break
         logger.info("Done processing dataframe file %s" % file)
@@ -102,13 +100,26 @@ def index_all(es, af_embedding_folder):
     logger.info(f"Finished indexing {num_df_files_processed} dataframe files in {end_time - start_time} s")
 
 
+def handle_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--index_name", default="chain_struct_embeddings", required=True, type=str)
+    parser.add_argument('--batch_size', required=True, type=int)
+    parser.add_argument('--num_vecs_to_load', required=True, type=int)
+
+    args = parser.parse_args()
+    index_name = args.index_name
+    batch_size = args.batch_size
+    num_vecs_to_load = args.num_vecs_to_load
+    return index_name, batch_size, num_vecs_to_load
+
 def main():
+    index_name, batch_size, num_vecs_to_load = handle_args()
     # Connect to Elasticsearch
     es = Elasticsearch([ES_URL], basic_auth=(ES_USER, ES_PWD), verify_certs=False)
 
-    create_index(es)
+    create_index(es, index_name)
 
-    index_all(es, AF_EMBEDDING_FOLDER)
+    index_all(es, AF_EMBEDDING_FOLDER, index_name, batch_size, num_vecs_to_load)
 
 
 if __name__ == '__main__':
