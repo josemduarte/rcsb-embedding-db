@@ -6,7 +6,7 @@ import time
 import argparse
 import concurrent.futures
 
-logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(threadName)s : %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 AF_EMBEDDING_FOLDER = "/data/struct_embeddings/embeddings-200M"
@@ -95,10 +95,10 @@ def index_all(es, af_embedding_folder, index_name, batch_size, num_vecs_to_load,
                     logger.info("Stopping indexing because we are over MAX_VECS_TO_INDEX=%d" % num_vecs_to_load)
                     over_max = True
                     break
-                logger.info("Done processing dataframe file %s" % file)
-                num_df_files_processed += 1
-                if over_max:
-                    break
+            logger.info("Done processing dataframe file %s" % file)
+            num_df_files_processed += 1
+            if over_max:
+                break
         logger.info("Done submitting all batches to thread pool")
         # Wait for all threads to complete
         concurrent.futures.wait(futures)
