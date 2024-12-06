@@ -14,7 +14,7 @@ dim = 1280
 ES_URL = os.getenv("ES_URL")
 ES_USER = os.getenv('ES_USER')
 ES_PWD = os.getenv('ES_PWD')
-
+MAX_QUEUE_LOAD = 1000
 
 def create_index(es, index_name):
     # Delete the index if it already exists (optional)
@@ -80,6 +80,7 @@ def index_all(es, af_embedding_folder, index_name, batch_size, num_vecs_to_load,
     over_max = False
     start_time = time.time()
 
+    futures = set()
     # Create thread pool executor
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
         for df in os.listdir(af_embedding_folder):
@@ -87,8 +88,13 @@ def index_all(es, af_embedding_folder, index_name, batch_size, num_vecs_to_load,
             logger.info("Starting processing dataframe file %s" % file)
             data = pd.read_pickle(file)
             for batch in get_batches_from_df(data, batch_size):
+                if len(futures) >= MAX_QUEUE_LOAD:
+                    # see https://stackoverflow.com/a/60760199
+                    logger.info("The thread pool queue has %d elements, which is above maximum load %d. Will wait for jobs to complete" % (len(futures), MAX_QUEUE_LOAD))
+                    time.sleep(10)  #  one batch takes ~0.5s to be indexed. Sleeping this long will give time for ~ 20 x num_threads batches to complete
+                    completed, futures = concurrent.futures.wait(futures, return_when=concurrent.futures.FIRST_COMPLETED)
                 logger.info("Submitting batch %d from file %s" % (batch_index, file))
-                executor.submit(index_batch, es, batch, index_name)
+                futures.add(executor.submit(index_batch, es, batch, index_name))
                 batch_index += 1
                 if batch_index * batch_size > num_vecs_to_load:
                     logger.info("Stopping indexing because we are over MAX_VECS_TO_INDEX=%d" % num_vecs_to_load)
