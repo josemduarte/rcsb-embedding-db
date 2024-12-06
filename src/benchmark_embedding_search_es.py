@@ -4,38 +4,41 @@ from elasticsearch import Elasticsearch
 import logging
 import numpy as np
 import argparse
-import random
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(threadName)s : %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 AF_EMBEDDING_FOLDER = "/data/struct_embeddings/embeddings-200M"
-dim = 1280
 ES_URL = os.getenv("ES_URL")
 ES_USER = os.getenv('ES_USER')
 ES_PWD = os.getenv('ES_PWD')
 
 
-def get_batches_from_df(df, batch_size):
-    """Thanks ChatGPT"""
-    for start_row in range(0, df.shape[0], batch_size):
-        yield df.iloc[start_row:start_row + batch_size]
-
-
 def get_queries(af_embedding_folder, num_queries):
+    """
+    Get a random set of query vectors of size num_queries from the first file in the directory listing of AF_EMBEDDING_FOLDER
+    Note that indexing was done in the same order, thus all entries of first files should be in the index
+    :param af_embedding_folder:
+    :param num_queries:
+    :return:
+    """
     queries = {}
 
     files = os.listdir(af_embedding_folder)
-    random.shuffle(files)
 
     for df in files:
         file = f'{af_embedding_folder}/{df}'
         logger.info("Starting processing dataframe file %s" % file)
         data = pd.read_pickle(file)
-        for batch in get_batches_from_df(data, num_queries):
-            for index, row in batch.iterrows():
-                queries[row['id']] = row['embedding']
-            break
+        # we shuffle to avoid any effect from caching
+        shuffled_data = data.sample(frac=1) # shuffle all rows
+        i = 0
+        for index, row in shuffled_data.iterrows():
+            queries[row['id']] = row['embedding']
+            if i >= num_queries - 1:
+                break
+            i += 1
+        # we just need the first file.
         break
     return queries
 
