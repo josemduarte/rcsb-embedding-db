@@ -16,7 +16,7 @@ ES_USER = os.getenv('ES_USER')
 ES_PWD = os.getenv('ES_PWD')
 MAX_QUEUE_LOAD = 1000
 
-def create_index(es, index_name):
+def create_index(es, index_name, num_shards, num_replicas):
     # Delete the index if it already exists (optional)
     if es.indices.exists(index=index_name):
         logger.info(f"Index {index_name} already exists. Dropping index {index_name}")
@@ -43,6 +43,12 @@ def create_index(es, index_name):
                         "type": "int8_hnsw"
                     }
                 }
+            }
+        },
+        "settings": {
+            "index": {
+                "number_of_shards": num_shards,
+                "number_of_replicas": num_replicas
             }
         }
     }
@@ -119,18 +125,22 @@ def handle_args():
     parser.add_argument('--batch_size', required=True, type=int)
     parser.add_argument('--num_vecs_to_load', required=True, type=int)
     parser.add_argument('--num_threads', required=True, type=int)
+    parser.add_argument("--num_shards", required=False, type=int, default=1)
+    parser.add_argument("--num_replicas", required=False, type=int, default=1)
 
     args = parser.parse_args()
     index_name = args.index_name
     batch_size = args.batch_size
     num_vecs_to_load = args.num_vecs_to_load
     num_threads = args.num_threads
-    return index_name, batch_size, num_vecs_to_load, num_threads
+    num_shards = args.num_shards
+    num_replicas = args.num_replicas
+    return index_name, batch_size, num_vecs_to_load, num_threads, num_shards, num_replicas
 
 def main():
-    index_name, batch_size, num_vecs_to_load, num_threads = handle_args()
+    index_name, batch_size, num_vecs_to_load, num_threads, num_shards, num_replicas = handle_args()
     es = Elasticsearch([ES_URL], basic_auth=(ES_USER, ES_PWD), verify_certs=False)
-    create_index(es, index_name)
+    create_index(es, index_name, num_shards, num_replicas)
     index_all(es, AF_EMBEDDING_FOLDER, index_name, batch_size, num_vecs_to_load, num_threads=num_threads)
 
 
