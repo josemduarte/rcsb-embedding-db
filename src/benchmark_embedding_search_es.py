@@ -9,7 +9,7 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(threadName)s : %(mes
 logger = logging.getLogger(__name__)
 
 AF_EMBEDDING_FOLDER = "/data/struct_embeddings/embeddings-200M"
-ES_URL = os.getenv("ES_URL")
+ES_URL = os.getenv("ES_URL").split(";")
 ES_USER = os.getenv('ES_USER')
 ES_PWD = os.getenv('ES_PWD')
 
@@ -78,7 +78,7 @@ def handle_args():
 
 def main():
     index_name, num_queries = handle_args()
-    es = Elasticsearch([ES_URL], basic_auth=(ES_USER, ES_PWD), verify_certs=False)
+    es = Elasticsearch(ES_URL, basic_auth=(ES_USER, ES_PWD), verify_certs=False)
 
     queries = get_queries(AF_EMBEDDING_FOLDER, num_queries)
 
