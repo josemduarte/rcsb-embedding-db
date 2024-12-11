@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 AF_EMBEDDING_FOLDER = "/data/struct_embeddings/embeddings-200M"
 dim = 1280
-ES_URL = os.getenv("ES_URL")
+ES_URL = os.getenv("ES_URL").split(";")
 ES_USER = os.getenv('ES_USER')
 ES_PWD = os.getenv('ES_PWD')
 MAX_QUEUE_LOAD = 1000
@@ -139,7 +139,7 @@ def handle_args():
 
 def main():
     index_name, batch_size, num_vecs_to_load, num_threads, num_shards, num_replicas = handle_args()
-    es = Elasticsearch([ES_URL], basic_auth=(ES_USER, ES_PWD), verify_certs=False)
+    es = Elasticsearch(ES_URL, basic_auth=(ES_USER, ES_PWD), verify_certs=False)
     create_index(es, index_name, num_shards, num_replicas)
     index_all(es, AF_EMBEDDING_FOLDER, index_name, batch_size, num_vecs_to_load, num_threads=num_threads)
 
