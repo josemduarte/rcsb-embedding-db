@@ -3,7 +3,7 @@ import pandas as pd
 import logging
 import time
 import argparse
-from pymongo import MongoClient
+from pymongo import MongoClient, ASCENDING
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(threadName)s : %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -83,6 +83,8 @@ def main():
     client = MongoClient(MONGO_URI)
     db = client[db_name]
     coll = db[coll_name]
+
+    coll.create_index([("rcsb_id", ASCENDING)])
 
     load_all(coll, AF_EMBEDDING_FOLDER, num_vecs_to_load, batch_size=batch_size)
 
