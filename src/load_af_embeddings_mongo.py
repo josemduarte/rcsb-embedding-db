@@ -50,7 +50,7 @@ def load_all(coll, af_embedding_folder, num_vecs_to_load, batch_size=10):
             load_batch(coll, batch)
             batch_index += 1
             if batch_index * batch_size > num_vecs_to_load:
-                logger.info("Stopping indexing because we are over MAX_VECS_TO_INDEX=%d" % num_vecs_to_load)
+                logger.info("Stopping loading because we are over MAX_VECS_TO_INDEX=%d" % num_vecs_to_load)
                 over_max = True
                 break
         logger.info("Done processing dataframe file %s" % file)
@@ -59,7 +59,7 @@ def load_all(coll, af_embedding_folder, num_vecs_to_load, batch_size=10):
             break
 
     end_time = time.time()
-    logger.info(f"Finished indexing {num_df_files_processed} dataframe files in {end_time - start_time} s")
+    logger.info(f"Finished loading {num_df_files_processed} dataframe files in {end_time - start_time} s")
 
 
 def handle_args():
