@@ -16,7 +16,7 @@ ES_USER = os.getenv('ES_USER')
 ES_PWD = os.getenv('ES_PWD')
 MAX_QUEUE_LOAD = 1000
 
-def create_index(es, index_name, num_shards, num_replicas):
+def create_index(es, index_name, num_shards=1, num_replicas=1, vec_index_type="int8_hnsw", enable_source=True):
     # Delete the index if it already exists (optional)
     if es.indices.exists(index=index_name):
         logger.info(f"Index {index_name} already exists. Dropping index {index_name}")
@@ -40,9 +40,12 @@ def create_index(es, index_name, num_shards, num_replicas):
                     "similarity": "cosine",
                     "index": True,
                     "index_options": {
-                        "type": "int8_hnsw"
+                        "type": vec_index_type
                     }
                 }
+            },
+            "_source": {
+                "enabled": True if enable_source else False
             }
         },
         "settings": {
@@ -127,6 +130,8 @@ def handle_args():
     parser.add_argument('--num_threads', required=True, type=int)
     parser.add_argument("--num_shards", required=False, type=int, default=1)
     parser.add_argument("--num_replicas", required=False, type=int, default=1)
+    parser.add_argument("--vec_index_type", required=False, type=str, default="int8_hnsw")
+    parser.add_argument("--enable_source", action=argparse.BooleanOptionalAction)
 
     args = parser.parse_args()
     index_name = args.index_name
@@ -135,12 +140,14 @@ def handle_args():
     num_threads = args.num_threads
     num_shards = args.num_shards
     num_replicas = args.num_replicas
-    return index_name, batch_size, num_vecs_to_load, num_threads, num_shards, num_replicas
+    vec_index_type = args.vec_index_type
+    enable_source = args.enable_source
+    return index_name, batch_size, num_vecs_to_load, num_threads, num_shards, num_replicas, vec_index_type, enable_source
 
 def main():
-    index_name, batch_size, num_vecs_to_load, num_threads, num_shards, num_replicas = handle_args()
+    index_name, batch_size, num_vecs_to_load, num_threads, num_shards, num_replicas, vec_index_type, enable_source = handle_args()
     es = Elasticsearch(ES_URL, basic_auth=(ES_USER, ES_PWD), verify_certs=False)
-    create_index(es, index_name, num_shards, num_replicas)
+    create_index(es, index_name, num_shards, num_replicas, vec_index_type=vec_index_type, enable_source=enable_source)
     index_all(es, AF_EMBEDDING_FOLDER, index_name, batch_size, num_vecs_to_load, num_threads=num_threads)
 
 
