@@ -99,7 +99,7 @@ def main():
     db = client[db_name]
     coll = db[coll_name]
 
-    coll.create_index([("rcsb_id", ASCENDING)])
+    coll.create_index([("rcsb_id", ASCENDING)], unique=True)
 
     load_all(coll, AF_EMBEDDING_FOLDER, num_vecs_to_load, batch_size=batch_size)
 
