@@ -3,6 +3,7 @@ import pandas as pd
 import logging
 import time
 import argparse
+import numpy as np
 from pymongo import MongoClient, ASCENDING
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(threadName)s : %(message)s', level=logging.INFO)
@@ -11,15 +12,15 @@ logger = logging.getLogger(__name__)
 AF_EMBEDDING_FOLDER = "/data/struct_embeddings/embeddings-200M"
 dim = 1280
 MONGO_URI = os.getenv("MONGO_URI")
+MAX_INT32 = 2**31
 
 
 def load_batch(coll, df_batch):
     documents = []
     for index, row in df_batch.iterrows():
-        np_vec = row['embedding']
-        vec = []
-        for i in range(len(np_vec)):
-            vec.append(float(np_vec[i]))
+        vec_norm = __normalize(row['embedding'])
+        vec_int32 = __npvec_float_to_int32(vec_norm)
+        vec = __npvec_int32_to_list(vec_int32)
         documents.append(
             {
                 "rcsb_id": row['id'],
@@ -28,6 +29,20 @@ def load_batch(coll, df_batch):
         )
     coll.insert_many(documents)
 
+def __npvec_int32_to_list(npvec):
+    vec = []
+    for i in range(len(npvec)):
+        vec.append(int(npvec[i]))
+    return vec
+
+def __normalize(npvec):
+    return npvec / np.linalg.norm(npvec)
+
+def __npvec_float_to_int32(npvec):
+    return np.round(npvec * MAX_INT32).astype(np.int32)
+
+def __npvec_int32_to_float(npvec):
+    return npvec.astype(np.float32) / MAX_INT32
 
 def get_batches_from_df(df, batch_size):
     """Thanks ChatGPT"""
