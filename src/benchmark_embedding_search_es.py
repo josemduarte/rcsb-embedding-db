@@ -70,14 +70,16 @@ def handle_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--index_name", default="chain_struct_embeddings", required=True, type=str)
     parser.add_argument('--num_queries', required=True, type=int)
+    parser.add_argument("--num_hits", required=False, type=int, default = 100)
 
     args = parser.parse_args()
     index_name = args.index_name
     num_queries = args.num_queries
-    return index_name, num_queries
+    num_hits = args.num_hits
+    return index_name, num_queries, num_hits
 
 def main():
-    index_name, num_queries = handle_args()
+    index_name, num_queries, num_hits = handle_args()
     es = Elasticsearch(ES_URL, basic_auth=(ES_USER, ES_PWD), verify_certs=False)
 
     queries = get_queries(AF_EMBEDDING_FOLDER, num_queries)
@@ -86,14 +88,17 @@ def main():
 
     i = 0
     for query_id, query in queries.items():
-        times[i] = run_query(es, index_name, query_id, query, 100)
+        times[i] = run_query(es, index_name, query_id, query, num_hits)
         i += 1
 
     time_min = np.min(times)
     time_max = np.max(times)
     time_median = np.median(times)
+    time_mean = np.mean(times)
     time_percentile = np.percentile(times, 95)
-    logger.info("Performed %d queries. Times (ms): min-max [%d, %d], median %.2f, 95-percentile %.2f" % (num_queries, time_min, time_max, time_median, time_percentile))
+
+    logger.info("Index [%s]. Num queries [%d]. Num hits [%d]. Times (ms): min-max [%d, %d], median [%.2f], mean [%.2f], 95-percentile [%.2f]" %
+                (index_name, num_queries, num_hits, time_min, time_max, time_median, time_mean, time_percentile))
 
 
 if __name__ == '__main__':
