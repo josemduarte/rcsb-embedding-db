@@ -64,7 +64,7 @@ def run_query(es, index_name, query_id, query_vector, hits_to_return):
             found_query = True
     if not found_query:
         logger.warning("Did not find query for id %s" % query_id)
-    return took
+    return took, found_query
 
 def handle_args():
     parser = argparse.ArgumentParser()
@@ -86,9 +86,13 @@ def main():
 
     times = np.zeros(num_queries)
 
+    queries_not_found = []
+
     i = 0
     for query_id, query in queries.items():
-        times[i] = run_query(es, index_name, query_id, query, num_hits)
+        times[i], found_query = run_query(es, index_name, query_id, query, num_hits)
+        if not found_query:
+            queries_not_found.append(query_id)
         i += 1
 
     time_min = np.min(times)
@@ -96,6 +100,9 @@ def main():
     time_median = np.median(times)
     time_mean = np.mean(times)
     time_percentile = np.percentile(times, 95)
+
+    if len(queries_not_found)>0:
+        logger.warning("Could not find self for %d query ids: %s" % (len(queries_not_found), queries_not_found))
 
     logger.info("Index [%s]. Num queries [%d]. Num hits [%d]. Times (ms): min-max [%d, %d], median [%.2f], mean [%.2f], 95-percentile [%.2f]" %
                 (index_name, num_queries, num_hits, time_min, time_max, time_median, time_mean, time_percentile))
