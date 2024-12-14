@@ -43,9 +43,9 @@ def get_queries(af_embedding_folder, num_queries):
     return queries
 
 
-def run_query(es, index_name, query_id, query_vector, hits_to_return):
+def run_query(es, index_name, query_id, query_vector, hits_to_return, paginate_at):
     knn_query = {
-        "size": hits_to_return,
+        "size": paginate_at,
         "knn": {
             "field": "struct-vector",
             "query_vector": query_vector,
@@ -71,15 +71,17 @@ def handle_args():
     parser.add_argument("--index_name", default="chain_struct_embeddings", required=True, type=str)
     parser.add_argument('--num_queries', required=True, type=int)
     parser.add_argument("--num_hits", required=False, type=int, default = 100)
+    parser.add_argument("--paginate_at", required=False, type=int, default=10)
 
     args = parser.parse_args()
     index_name = args.index_name
     num_queries = args.num_queries
     num_hits = args.num_hits
-    return index_name, num_queries, num_hits
+    paginate_at = args.paginate_at
+    return index_name, num_queries, num_hits, paginate_at
 
 def main():
-    index_name, num_queries, num_hits = handle_args()
+    index_name, num_queries, num_hits, paginate_at = handle_args()
     es = Elasticsearch(ES_URL, basic_auth=(ES_USER, ES_PWD), verify_certs=False)
 
     queries = get_queries(AF_EMBEDDING_FOLDER, num_queries)
@@ -90,7 +92,7 @@ def main():
 
     i = 0
     for query_id, query in queries.items():
-        times[i], found_query = run_query(es, index_name, query_id, query, num_hits)
+        times[i], found_query = run_query(es, index_name, query_id, query, num_hits, paginate_at)
         if not found_query:
             queries_not_found.append(query_id)
         i += 1
