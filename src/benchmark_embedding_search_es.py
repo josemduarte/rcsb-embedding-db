@@ -106,8 +106,8 @@ def main():
     if len(queries_not_found)>0:
         logger.warning("Could not find self for %d query ids: %s" % (len(queries_not_found), queries_not_found))
 
-    logger.info("Index [%s]. Num queries [%d]. Num hits [%d]. Times (ms): min-max [%d, %d], median [%.2f], mean [%.2f], 95-percentile [%.2f]" %
-                (index_name, num_queries, num_hits, time_min, time_max, time_median, time_mean, time_percentile))
+    logger.info("Index [%s]. Num queries [%d]. num_candidates/k [%d]. Paginate [%d]. Times (ms): min-max [%d, %d], median [%.2f], mean [%.2f], 95-percentile [%.2f]" %
+                (index_name, num_queries, num_hits, paginate_at, time_min, time_max, time_median, time_mean, time_percentile))
 
 
 if __name__ == '__main__':
