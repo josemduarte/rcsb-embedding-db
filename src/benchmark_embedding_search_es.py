@@ -54,7 +54,8 @@ def run_query(es, index_name, query_id, query_vector, hits_to_return, paginate_a
         },
         "_source": False
     }
-    response = es.search(index=index_name, body=knn_query)
+    # timeout at 60 is because queries for 100M with k>1000 take more than 10s (the default timeout)
+    response = es.search(index=index_name, body=knn_query, request_timeout=60)
     found_query = False
     took = response['took']
     for hit in response['hits']['hits']:
