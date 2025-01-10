@@ -1,10 +1,13 @@
 import os
+import sys
+
 import pandas as pd
 import logging
 import time
 import argparse
 import numpy as np
 from pymongo import MongoClient, ASCENDING
+from pymongo.synchronous.collection import Collection
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(threadName)s : %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -77,27 +80,63 @@ def load_all(coll, af_embedding_folder, num_vecs_to_load, batch_size=10):
     logger.info(f"Finished loading {num_df_files_processed} dataframe files in {end_time - start_time} s")
 
 
+def check_db_contents(coll: Collection, af_embedding_folder, batch_size=10):
+    """
+    Check that the vector contents of db after deserializing and decoding back to float, coincide with the vectors in
+    panda files, i.e. a round trip check for the encoding done when data was written to db.
+    :param coll:
+    :param af_embedding_folder:
+    :param batch_size:
+    :return:
+    """
+    for df in os.listdir(af_embedding_folder):
+        file = f'{af_embedding_folder}/{df}'
+        logger.info("Starting processing dataframe file %s" % file)
+        data = pd.read_pickle(file)
+        i = 0
+        for batch in get_batches_from_df(data, batch_size):
+            for index, row in batch.iterrows():
+                rcsb_id = row['id']
+                doc = coll.find_one({"rcsb_id": rcsb_id})
+                vec_from_db_int = np.array(doc["struct_vector"], dtype=int)
+                vec_from_db_float = __npvec_int32_to_float(vec_from_db_int)
+                vec_norm = __normalize(row['embedding'])
+                if not np.allclose(vec_from_db_float, vec_norm):
+                    print(rcsb_id)
+                i += 1
+                if i%1000 == 0:
+                    print("Done %d" % i)
+
+
+
 def handle_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--db_name", required=True, type=str)
     parser.add_argument('--coll_name', required=True, type=str)
     parser.add_argument('--num_vecs_to_load', required=True, type=int)
     parser.add_argument("--batch_size", required=True, type=int)
+    # don't load anything: simply check db contents against panda files content (with appropriate decoding)
+    parser.add_argument("--check_db_contents_only", action=argparse.BooleanOptionalAction)
 
     args = parser.parse_args()
     db_name = args.db_name
     coll_name = args.coll_name
     num_vecs_to_load = args.num_vecs_to_load
     batch_size = args.batch_size
-    return db_name, coll_name, num_vecs_to_load, batch_size
+    check_db = args.check_db_contents_only
+    return db_name, coll_name, num_vecs_to_load, batch_size, check_db
 
 
 def main():
-    db_name, coll_name, num_vecs_to_load, batch_size = handle_args()
+    db_name, coll_name, num_vecs_to_load, batch_size, check_db = handle_args()
 
     client = MongoClient(MONGO_URI)
     db = client[db_name]
     coll = db[coll_name]
+
+    if check_db:
+        check_db_contents(coll, AF_EMBEDDING_FOLDER, batch_size=batch_size)
+        sys.exit(0)
 
     coll.create_index([("rcsb_id", ASCENDING)], unique=True)
 
