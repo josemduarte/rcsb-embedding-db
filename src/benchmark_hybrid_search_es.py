@@ -136,14 +136,18 @@ def main():
     time_median = np.median(times)
     time_mean = np.mean(times)
     time_percentile = np.percentile(times, 95)
+
+    counts_above05_min = np.min(counts_above05)
     counts_above05_mean = np.mean(counts_above05)
+    counts_above05_max = np.max(counts_above05)
 
     if len(queries_not_found) > 0:
         logger.warning("Could not find self for %d query ids: %s" % (len(queries_not_found), queries_not_found))
 
     logger.info(
-        "Index [%s]. Num queries [%d]. num_candidates/k [%d]. Paginate [%d]. Times (ms): min-max [%d, %d], median [%.2f], mean [%.2f], 95-percentile [%.2f]. Mean num of non-random hits [%.1f]" %
-        (index_name, num_queries, num_hits, paginate_at, time_min, time_max, time_median, time_mean, time_percentile, counts_above05_mean))
+        "Index [%s]. Num queries [%d]. num_candidates/k [%d]. Paginate [%d]. Times (ms): min-max [%d, %d], median [%.2f], mean [%.2f], 95-percentile [%.2f]. Number of non-random hits: min-max-mean [%.0f %.0f %.1f]" %
+        (index_name, num_queries, num_hits, paginate_at, time_min, time_max, time_median, time_mean, time_percentile,
+         counts_above05_min, counts_above05_max, counts_above05_mean))
 
 
 if __name__ == '__main__':
