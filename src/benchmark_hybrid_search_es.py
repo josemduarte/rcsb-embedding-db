@@ -144,10 +144,13 @@ def main():
     if len(queries_not_found) > 0:
         logger.warning("Could not find self for %d query ids: %s" % (len(queries_not_found), queries_not_found))
 
+    filter_msg = ""
+    if filter_value:
+        filter_msg = " (with filter on '%s')" % filter_value
     logger.info(
-        "Index [%s]. Num queries [%d]. num_candidates/k [%d]. Paginate [%d]. Times (ms): min-max [%d, %d], median [%.2f], mean [%.2f], 95-percentile [%.2f]. Number of non-random hits: min-max-mean [%.0f %.0f %.1f]" %
+        "Index [%s]. Num queries [%d]. num_candidates/k [%d]. Paginate [%d]. Times (ms): min-max [%d, %d], median [%.2f], mean [%.2f], 95-percentile [%.2f]. Number of non-random hits%s: min-max-mean [%.0f %.0f %.1f]" %
         (index_name, num_queries, num_hits, paginate_at, time_min, time_max, time_median, time_mean, time_percentile,
-         counts_above05_min, counts_above05_max, counts_above05_mean))
+         filter_msg, counts_above05_min, counts_above05_max, counts_above05_mean))
 
 
 if __name__ == '__main__':
